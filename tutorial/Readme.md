@@ -6,7 +6,19 @@
 * [國產視頻](https://search.bilibili.com/all?keyword=%E7%9F%A5%E8%AF%86%E5%9B%BE%E8%B0%B1%EF%BC%88Knowledge%20Graph)
 * [Official Site](https://docs.ampligraph.org/en/1.3.2/tutorials.html)
 
-
 ## Reference:
 * [AmpliGraph初步实践](https://juejin.cn/post/7033386911968428040)
 * [ECAI 2020 Tutorials](https://www.youtube.com/watch?v=gX_KHaU8ChI)
+
+## Note:
+1. Hermitian dot product(複數內積 - 後項都要取bar)
+```
+x = (1+i, 2+3i) , y = (2+i, 3+4i)
+                 _____         ______
+  <x , y> = (1+i)(2+i) + (2+3i)(3+4i)
+          = (1+i)(2-i) + (2+3i)(3-4i)
+
+Field = R (real - 實數空間), 顯然取不取bar皆是一致的；
+Field = C (complex - 複數空間), 若不取bar則無法得到一內積空間,
+
+ ∵〈x,x〉＞ 0 and〈ix,ix〉= -1〈x,x〉＞ 0, x≠0  => contradiction.
