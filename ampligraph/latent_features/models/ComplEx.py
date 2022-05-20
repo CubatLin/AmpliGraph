@@ -257,10 +257,10 @@ class ComplEx(EmbeddingModel):
         e_o_real, e_o_img = tf.split(e_o, 2, axis=1)
 
         # See Eq. 9 [trouillon2016complex):
-        return tf.reduce_sum(e_p_real * e_s_real * e_o_real, axis=1) + \
-            tf.reduce_sum(e_p_real * e_s_img * e_o_img, axis=1) + \
-            tf.reduce_sum(e_p_img * e_s_real * e_o_img, axis=1) - \
-            tf.reduce_sum(e_p_img * e_s_img * e_o_real, axis=1)
+        return tf.reduce_sum(e_p_real * e_s_real * e_o_real, axis=1) + \  # 可逆的話我希望s,o的實部內積越大越好
+            tf.reduce_sum(e_p_real * e_s_img * e_o_img, axis=1) + \       # 可逆的話我希望s,o的虛部內積越大越好
+            tf.reduce_sum(e_p_img * e_s_real * e_o_img, axis=1) - \       # 不可逆的話我希望s實部指向o的虛部內積越大越好
+            tf.reduce_sum(e_p_img * e_s_img * e_o_real, axis=1)           # 不可逆的話我希望s虛部指向o的實部內積越小越好
 
     def fit(self, X, early_stopping=False, early_stopping_params={}, focusE_numeric_edge_values=None,
             tensorboard_logs_path=None):
