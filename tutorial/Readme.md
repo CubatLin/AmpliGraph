@@ -120,8 +120,9 @@ Case2: E1指向E2, Score要大 / E2反指向E1不成立, Score小
 
 3. When im(Wr) !=0, it can handle anti-symmetric relations. Eg of anti-symmetric relation is lives_in: <Sumit lives_in, Dublin> doesnt imply <Dublin, lives_in, Sumit>. If the first triple get's a high score, the second one should get a low score. This is ensured by the above equation when Im(Wr) !=0. For the above 2 triples, the first 2 terms of the complex scoring function is same. The last two term for <Sumit lives_in, Dublin>  is Im(lives_in) * ( Re(Sumit)*Im(Dublin) - Im(Sumit)Re(Dublin)  ) whereas for <Dublin, lives_in, Sumit> it is  Im(lives_in) * (  Im(Sumit)*Re(Dublin)- Re(Sumit)*Im(Dublin)  ). Hence if first triple gets a high score, the second one will get a low score. 
 
-### 5. ComplEx的loss - min {[negative log-likelihood](https://blog.csdn.net/silver1225/article/details/88914652)}
-* 對機率p求對數, 所以p的值为0 ≤ p ≤ 1; 當p值越大, NLL會越小, 趨近於0
+### 5. ComplEx的loss - arg minΘ∑r(s,o)∈Ωlog(1+exp(−Yrsoϕ(s,r,o;Θ)))+λ||Θ||22
+* 當score很高,exp(-score)很小 -> 原式趨近於 arg min log(1) -> 趨近0, 代表沒有loss, 完美預測 
+* 當score很小甚至是負數,exp(-score)很大 -> 原式趨近於 arg min log(1+一個很大的數字) -> loss巨大, gradient走起 
 
 ## Topics:
 * [知乎 | Complex Embeddings for Simple Link Prediction](https://zhuanlan.zhihu.com/p/107914673)
@@ -137,4 +138,3 @@ Case2: E1指向E2, Score要大 / E2反指向E1不成立, Score小
 ## Reference:
 * [AmpliGraph初步实践](https://juejin.cn/post/7033386911968428040)
 * [ECAI 2020 Tutorials](https://www.youtube.com/watch?v=gX_KHaU8ChI)
-
