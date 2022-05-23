@@ -1,5 +1,5 @@
 ## Note:
-1. Hermitian dot product(複數內積 - 後項都要取bar)
+### 1. Hermitian dot product(複數內積 - 後項都要取bar)
 ```
 x = (1+i, 2+3i) , y = (2+i, 3+4i)
                  _____         ______
@@ -15,10 +15,84 @@ Field = C (complex - 複數空間), 若不取bar則無法得到一內積空間,
  ∵〈x,x〉＞ 0 and〈ix,ix〉= -1〈x,x〉＞ 0, x≠0  => contradiction.
  ```
  
-2. Scoring function of ComplEx:
-直覺上, 當s&o可逆, 我希望他的score是最大的
-當不可逆的時候, score可以思考為: s指向的影響力-o反指向的影響力
+### 2. ComplEx的Embedding Initialize
+1. latent_features/initializers.py 
+- 初始化ent_emb(entity embedding)與rel_emb(relation embedding)的原始碼
+```python
+def _initialize_parameters(self):
+  ...
+  else:
+  # initialize entity embeddings to zero (these are reinitialized every batch by batch embeddings)
+  # entity 初始化: tf.zeros_initializer()
+  self.ent_emb = tf.get_variable('ent_emb_{}'.format(timestamp),
+                                 shape=[self.batch_size * 2, self.internal_k],
+                                 initializer=tf.zeros_initializer(),
+                                 dtype=tf.float32)
+                                 
+  # relation 初始化: tf.random_normal_initializer()
+  self.rel_emb = tf.get_variable('rel_emb_{}'.format(timestamp),
+                                 shape=[len(self.rel_to_idx), self.internal_k],
+                                 initializer=self.initializer.get_relation_initializer(
+                                 len(self.rel_to_idx), self.internal_k),
+                                 dtype=tf.float32)
+                                 
+    ->  def get_relation_initializer(self, in_shape=None, out_shape=None, init_type='tf'):
+            """ Initializer for relation embeddings
+            Returns
+            -------
+            initialized_values: tf.Op or n-d array
+                Weights initializer
+            """
+            assert init_type in ['tf', 'np'], 'Invalid initializer type!'
+            if init_type == 'tf':
+                return self._get_tf_initializer(in_shape, out_shape, 'r')
+            else:
+                return self._get_np_initializer(in_shape, out_shape, 'r')
+
+      ->  def _get_tf_initializer(self, in_shape=None, out_shape=None, concept='e'):
+            """Create a tensorflow node for initializer
+            Returns
+            -------
+            initializer_instance: An Initializer instance.
+            """
+            return tf.random_normal_initializer(mean=self._initializer_params['mean'],
+                                                stddev=self._initializer_params['std'],
+                                                dtype=tf.float32)
+
 ```
+
+2. latent_features/models/EmbeddingModel.py 
+- 將ent_emb與rel_emb透過tf.nn.embedding_lookup方法轉成要計算loss的e_s, e_p, e_o
+- e_s, e_p, e_o會再透過tf.split切成scoring function的實數虛數兩個向量
+
+```python
+def _lookup_embeddings(self, x, get_weight=False):
+"""Get the embeddings for subjects, predicates, and objects of a list of statements used to train the model.
+        Parameters
+        ----------
+        x : tensor, shape [n, k]
+            A tensor of k-dimensional embeddings
+        """
+        e_s = self._entity_lookup(x[:, 0])
+        e_p = tf.nn.embedding_lookup(self.rel_emb, x[:, 1])
+        e_o = self._entity_lookup(x[:, 2])
+        
+        if get_weight:
+            wt = self.weight_triple[
+                self.batch_number * self.batch_size:(self.batch_number + 1) * self.batch_size]
+        
+            return e_s, e_p, e_o, wt
+        return e_s, e_p, e_o
+```
+
+3.參數更新:
+- 取每個batch的avg loss- > f(scoring), 透過sgd更新
+
+
+### 3. Scoring function of ComplEx:
+直覺上, 當s&o可逆, 我希望他的score是最大的 / 
+當不可逆的時候, score可以思考為: s指向的影響力-o反指向的影響力
+```python
 source code from ./model/ComplEx.py
 ----------
 # Assume each embedding is made of an img and real component.
@@ -34,21 +108,19 @@ return tf.reduce_sum(e_p_real * e_s_real * e_o_real, axis=1) + \  # 可逆的話
     tf.reduce_sum(e_p_img * e_s_img * e_o_real, axis=1)           # 不可逆的話我希望s虛部指向o的實部內積越小越好
 ```
 
-3. ComplEx的Score funcion 
-
-* Insight from AmpliGraph
+### 4. ComplEx的Score funcion 
 ```
 Case1: 兩實體是雙向, 則score要大
 Case2: E1指向E2, Score要大 / E2反指向E1不成立, Score小
 ```
+* Insight from AmpliGraph
 1. The  <Re(Wr),Re(Es),Re(Eo)>  + <Re(Wr),Im(Es),Im(Eo)> can handle symmertic relations and the last two terms can handle anti-symmetry. Ideally, for symmertic relations Im(Wr) should be 0 and for anti-symmetric relations Im(Wr) !=0 
 
 2. Example of Symmetric relation is colleague_with. i.e. if <Sumit, colleague_with, Luca> then <Luca, colleague_with, Sumit> is also true. Both these triples should get same score. The first 2 terms of the above equation ensures this if im(Wr)==0.. When im(Wr) is 0, the complex score is Re( colleague_with) * Re(Sumit) * Re(Luca) + Re(colleague_with) * Im(Sumit) * Im(Luca) for the first  triple as well as second triple. i.e. the score is same.
 
 3. When im(Wr) !=0, it can handle anti-symmetric relations. Eg of anti-symmetric relation is lives_in: <Sumit lives_in, Dublin> doesnt imply <Dublin, lives_in, Sumit>. If the first triple get's a high score, the second one should get a low score. This is ensured by the above equation when Im(Wr) !=0. For the above 2 triples, the first 2 terms of the complex scoring function is same. The last two term for <Sumit lives_in, Dublin>  is Im(lives_in) * ( Re(Sumit)*Im(Dublin) - Im(Sumit)Re(Dublin)  ) whereas for <Dublin, lives_in, Sumit> it is  Im(lives_in) * (  Im(Sumit)*Re(Dublin)- Re(Sumit)*Im(Dublin)  ). Hence if first triple gets a high score, the second one will get a low score. 
 
-4. ComplEx的loss - min {[negative log-likelihood](https://blog.csdn.net/silver1225/article/details/88914652)}
-
+### 5. ComplEx的loss - min {[negative log-likelihood](https://blog.csdn.net/silver1225/article/details/88914652)}
 * 對機率p求對數, 所以p的值为0 ≤ p ≤ 1; 當p值越大, NLL會越小, 趨近於0
 
 ## Topics:
