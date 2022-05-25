@@ -101,6 +101,26 @@ def _lookup_embeddings(self, x, get_weight=False):
         
             return e_s, e_p, e_o, wt
         return e_s, e_p, e_o
+
+
+   ->   def _entity_lookup(self, entity):
+            """Get the embeddings for entities.
+               Remaps the entity indices to corresponding variables in the GPU memory when dealing with large graphs.
+            Parameters
+            ----------
+            Returns
+            -------
+            emb : Tensor
+                A Tensor that includes the embeddings of the entities.
+            """
+
+            if self.dealing_with_large_graphs:
+                remapping = self.sparse_mappings.lookup(entity)
+            else:
+                remapping = entity
+
+            emb = tf.nn.embedding_lookup(self.ent_emb, remapping)
+            return emb
 ```
 
 3.參數更新:
