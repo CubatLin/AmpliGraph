@@ -18,9 +18,27 @@ Field = C (complex - 複數空間), 若不取bar則無法得到一內積空間,
 ### 2. ComplEx的Embedding Initialize
 1. latent_features/initializers.py 
 - 初始化ent_emb(entity embedding)與rel_emb(relation embedding)的原始碼
+- 可以發現如果不是大圖模式(if not self.dealing_with_large_graphs), 都是用一個隨機初始完成embedding
 ```python
 def _initialize_parameters(self):
-  ...
+  if not self.dealing_with_large_graphs:
+    self.ent_emb = tf.get_variable('ent_emb_{}'.format(timestamp),
+                                   shape=[len(self.ent_to_idx), self.internal_k],
+                                   initializer=self.initializer.get_entity_initializer(
+                                   len(self.ent_to_idx), self.internal_k),
+                                   dtype=tf.float32)
+    -> def get_entity_initializer(self, in_shape=None, out_shape=None, init_type='tf'):
+           assert init_type in ['tf', 'np'], 'Invalid initializer type!'
+           if init_type == 'tf':
+               return self._get_tf_initializer(in_shape, out_shape, 'e')
+           else:
+               return self._get_np_initializer(in_shape, out_shape, 'e')                               
+     
+    self.rel_emb = tf.get_variable('rel_emb_{}'.format(timestamp),
+                                   shape=[len(self.rel_to_idx), self.internal_k],
+                                   initializer=self.initializer.get_relation_initializer(
+                                   len(self.rel_to_idx), self.internal_k),
+                                   dtype=tf.float32)
   else:
   # initialize entity embeddings to zero (these are reinitialized every batch by batch embeddings)
   # entity 初始化: tf.zeros_initializer()
