@@ -16,9 +16,12 @@ Field = C (complex - 複數空間), 若不取bar則無法得到一內積空間,
  ```
  
 ### 2. ComplEx的Embedding Initialize
+分兩部分, 一部分是initial參數, 另一部分是initial entity lookup embedding
+
 1. latent_features/initializers.py 
-- 初始化ent_emb(entity embedding)與rel_emb(relation embedding)的原始碼
-- 可以發現如果不是大圖模式(if not self.dealing_with_large_graphs), 都是用一個隨機初始完成embedding
+- initial神經網路參數(nn要fine-tune的部分) 
+- 初始化ent_emb(entity embedding要乘的參數)與rel_emb(relation embedding要乘的參數)的原始碼
+- 可以發現如果不是大圖模式(if not self.dealing_with_large_graphs), 都是用一個隨機初始完成參數設定
 ```python
 def _initialize_parameters(self):
   if not self.dealing_with_large_graphs:
@@ -80,6 +83,7 @@ def _initialize_parameters(self):
 ```
 
 2. latent_features/models/EmbeddingModel.py 
+- initial entity lookup embedding(每個entity, relation都可以拿到一個embedding)
 - 將ent_emb與rel_emb透過tf.nn.embedding_lookup方法轉成要計算loss的e_s, e_p, e_o
 - e_s, e_p, e_o會再透過tf.split切成scoring function的實數虛數兩個向量
 
