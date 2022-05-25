@@ -138,3 +138,4 @@ Case2: E1指向E2, Score要大 / E2反指向E1不成立, Score小
 ## Reference:
 * [AmpliGraph初步实践](https://juejin.cn/post/7033386911968428040)
 * [ECAI 2020 Tutorials](https://www.youtube.com/watch?v=gX_KHaU8ChI)
+* [阿里巴巴首次揭秘电商知识图谱AliCoCo！淘宝搜索原来这样玩！](https://developer.aliyun.com/article/754652)
