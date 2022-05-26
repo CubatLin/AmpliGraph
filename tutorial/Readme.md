@@ -1,3 +1,10 @@
+### Build Conda Environment
+```
+- conda config --set ssl_verify no
+- pip install ampligraph --no-deps
+- python -m pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host file.pythonhosted.org pip install tensorflow==1.15
+```
+
 ## Note:
 ### 1. Hermitian dot product(複數內積 - 後項都要取bar)
 ```
